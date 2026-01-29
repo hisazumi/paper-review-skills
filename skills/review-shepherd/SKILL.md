@@ -1,7 +1,7 @@
 ---
 name: review-shepherd
 description: Transform review analysis into constructive feedback with actionable improvements. Mentor/shepherd mode - strict but supportive.
-argument-hint: "<file path> [--analysis <analysis file>]"
+argument-hint: "<file path> [--analysis <analysis file>] [--survey <survey file>] [--keep-intermediate]"
 ---
 
 # Review Shepherd Skill
@@ -15,6 +15,30 @@ $ARGUMENTS
 This can be:
 1. A file path to a paper draft (will analyze and provide feedback)
 2. A file path with `--analysis <path>` pointing to prior analysis from `/review-analyze`
+3. A file path with `--survey <path>` pointing to prior survey from `/survey-literature`
+
+Options:
+- `--analysis <path>`: Path to analyze_output.md (from review-analyze)
+- `--survey <path>`: Path to survey_output.md (from survey-literature)
+- `--keep-intermediate`: Keep intermediate files (survey_output.md, analyze_output.md) after merging
+
+## Intermediate File Integration
+
+When used as part of the review-paper pipeline, this skill reads intermediate files:
+
+1. **Check for intermediate files** in the paper's directory:
+   - `survey_output.md` (from survey-literature)
+   - `analyze_output.md` (from review-analyze)
+
+2. **If both files exist**:
+   - Read and integrate their contents
+   - Use survey findings for literature context
+   - Use analysis findings for critical issues
+   - Synthesize into unified feedback
+
+3. **After generating REVIEW.md**:
+   - Delete intermediate files by default
+   - Keep them if `--keep-intermediate` is specified
 
 ## Your Role
 
@@ -93,6 +117,26 @@ You are NOT just a critic. You are a shepherd who:
 - "You failed to..."
 - "Obviously missing..."
 - "Any competent researcher would..."
+
+## Output File
+
+**IMPORTANT**: Save your final output to `REVIEW.md` in the paper's directory.
+
+### Intermediate File Cleanup
+
+After generating REVIEW.md, handle intermediate files:
+
+```
+Default behavior (no --keep-intermediate):
+  1. Delete survey_output.md (if exists)
+  2. Delete analyze_output.md (if exists)
+  3. Only REVIEW.md remains
+
+With --keep-intermediate:
+  1. Keep survey_output.md
+  2. Keep analyze_output.md
+  3. REVIEW.md is the unified result
+```
 
 ## Meta-Review (Optional)
 

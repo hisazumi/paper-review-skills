@@ -85,6 +85,14 @@ Analyze the paper across these dimensions:
 - [Strength 2]
 ```
 
+## Output File
+
+**IMPORTANT**: Save your output to `analyze_output.md` in the paper's directory.
+
+- If input is a file path (e.g., `/path/to/paper/draft.tex`), save to `/path/to/paper/analyze_output.md`
+- This file is used as intermediate output for the review-paper pipeline
+- When used standalone, this output can still be referenced independently
+
 ## Guidelines
 
 - Be objective and evidence-based
@@ -93,3 +101,4 @@ Analyze the paper across these dimensions:
 - Focus on substance over style
 - Do not suggest solutions here (that's for review-shepherd)
 - Rate severity honestly - don't inflate or deflate
+- Always save output to `analyze_output.md` as specified above

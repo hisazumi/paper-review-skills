@@ -63,6 +63,15 @@ Produce a structured report in Markdown:
 - "[term 2]"
 ```
 
+## Output File
+
+**IMPORTANT**: Save your output to `survey_output.md` in the paper's directory.
+
+- If input is a file path (e.g., `/path/to/paper/draft.tex`), save to `/path/to/paper/survey_output.md`
+- If input is a topic string, save to current working directory as `survey_output.md`
+- This file is used as intermediate output for the review-paper pipeline
+- When used standalone, this output can still be referenced independently
+
 ## Guidelines
 
 - Prioritize peer-reviewed publications (conferences, journals)
@@ -71,3 +80,4 @@ Produce a structured report in Markdown:
 - If uncertain about a paper's existence, indicate with "[to verify]"
 - Use WebSearch to find actual papers when possible
 - Do not fabricate citations - if you cannot verify, say so
+- Always save output to `survey_output.md` as specified above

@@ -51,38 +51,50 @@ Options:
 
 ## Execution Instructions
 
-### Phase 1: Parallel Analysis (Time Saving: ~50%)
+### Phase 1: Parallel Analysis (TRUE PARALLEL EXECUTION)
 
-**IMPORTANT**: Execute survey-literature and review-analyze IN PARALLEL. These skills analyze from independent perspectives and have no dependencies on each other.
+**CRITICAL**: You MUST execute survey-literature and review-analyze using **two Task tool calls in a SINGLE message**. This enables true parallel execution.
+
+#### How to Achieve True Parallel Execution
+
+Send ONE message containing TWO Task tool invocations:
+
+1. First Task tool call:
+   - description: "Survey literature"
+   - prompt: "Run /survey-literature on [PAPER_PATH]. Save to survey_output.md in the paper directory."
+   - subagent_type: "general-purpose"
+
+2. Second Task tool call (in the SAME message):
+   - description: "Analyze paper"
+   - prompt: "Run /review-analyze on [PAPER_PATH]. Save to analyze_output.md in the paper directory."
+   - subagent_type: "general-purpose"
+
+**DO NOT** call them sequentially in separate messages - that defeats the purpose of parallel execution.
+
+#### Intermediate Output Files
+
+Phase 1 produces two intermediate files in the paper's directory:
+- `survey_output.md` - Literature survey results
+- `analyze_output.md` - Critical analysis results
 
 #### Standard Mode (no --quick flag):
-Run both skills simultaneously:
-
-1. **survey-literature** (in parallel):
-   - Identify the paper's research area
-   - Find relevant related work
-   - Check for citation gaps
-   - Assess positioning in the field
-
-2. **review-analyze** (in parallel):
-   - Analyze structure and flow
-   - Identify logic gaps (What/Why/How/When/Limits)
-   - Check technical correctness
-   - Assess research contribution
+Run both skills simultaneously as described above.
 
 #### Quick Mode (--quick flag):
 Skip survey-literature, run only review-analyze in Phase 1.
 
 ### Phase 2: Synthesis (Sequential)
 
-After Phase 1 completes, execute review-shepherd:
+After Phase 1 completes (both Task tools return), execute review-shepherd:
 
 3. **review-shepherd** (sequential, depends on Phase 1):
+   - Read `survey_output.md` and `analyze_output.md` from paper directory
    - Integrate findings from both survey and analysis
    - Transform critical points into constructive feedback
    - Prioritize improvements (Must/Should/Nice)
    - Cross-reference: literature gaps affect novelty claims
-   - End with encouragement
+   - Generate final `REVIEW.md`
+   - Delete intermediate files (unless --keep-intermediate)
 
 ## Output Format
 
@@ -142,12 +154,14 @@ Produce a single comprehensive report:
 
 ## Guidelines
 
-- **Parallel Execution**: Always run survey-literature and review-analyze in parallel (unless --quick)
+- **Parallel Execution**: Always run survey-literature and review-analyze using TWO Task tool calls in ONE message (unless --quick)
+- **Intermediate Files**: Phase 1 outputs to `survey_output.md` and `analyze_output.md`
+- **Final Output**: Phase 2 merges intermediate files into `REVIEW.md`
+- **Cleanup**: Intermediate files are deleted after merge (use --keep-intermediate to retain)
 - Maintain consistency across all three phases
 - Cross-reference findings (e.g., literature gaps affect novelty claims)
 - Be thorough but not repetitive
 - End on a constructive note
-- Save the full review to a file (e.g., REVIEW.md) in the paper's directory
 
 ## Special Instructions
 
