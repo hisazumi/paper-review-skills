@@ -1,223 +1,107 @@
-# Paper Review Skills for Claude Code
+# Paper Review Skills
 
-A collection of Claude Code skills for reviewing academic papers and theses.
-Four user-facing skills cover every stage of writing, from outline to post-review.
+研究文書（研究概要・中間発表予稿・研究論文・卒業論文）をレビューするための道具集。
+**Claude Code のスキル**としても、**任意のLLMに貼るプロンプト**としても使えます。
 
-論文レビュー用の Claude Code スキル集。
-執筆の各段階に対応する 4 つのスキルで、アウトラインから修正対応まで一貫してカバーします。
-
----
-
-## Which skill do I use? / どのスキルを使う？
-
-Choose by **where you are in the writing process**:
-
-執筆の**どの段階にいるか**で選んでください。
-
-```
- Writing Stage                    Skill
- ─────────────────────────────────────────────────────
-
- 1. Outline / Early Draft         /check-articulation
-    (構成段階・初稿)                 Detect missing explanations
-                                    with 5W analysis
-                 │
-                 ▼
- 2. Draft Complete                /review
-    (だいたい書けた)                 Full auto-review: detects
-                                    thesis vs. paper, runs
-                                    the right pipeline
-                 │
-                 ▼
- 3. Before Submission             /format-check
-    (提出直前)                       Format & style check
-                                    (LaTeX / Word)
-                 │
-                 ▼
- 4. After Review / Re-review      /review-tracker
-    (修正後・再レビュー)             Merge multiple reviews,
-                                    deduplicate, track status
-```
+A toolkit for reviewing academic writing (abstracts, conference/interim drafts, papers, theses).
+Use it as **Claude Code skills** — or as **copy‑paste prompts for any LLM** (ChatGPT / Gemini / …).
 
 ---
 
-## User-Facing Skills / ユーザー向けスキル
+## まず何を使う？ / Start here
 
-### 1. `/check-articulation` — Detect Missing Explanations / 説明不足の検出
+**入口は1つ、`/research-review` です。** 概要か論文か卒論かを自動で見分け、研究の骨子・一貫性・当てどころ・関連研究・説明不足・弱点・体裁を一気に見て、**提出前の最優先手つき**の教員向けレビューを返します。
 
-**When**: Outline to early draft stage. You want to find logical gaps before polishing prose.
-
-**What it does**: Applies a 5W framework (What, Why, How, When, Limits) to find places where the author knows something but hasn't written it down. Returns gap analysis with concrete, copy-paste-ready improvement text.
-
-**いつ**: 構成段階〜初稿。論理の抜け漏れを文章推敲の前に見つけたいとき。
+`/research-review` is the single entry point. It auto‑detects abstract / paper / thesis and runs every review lens, then returns a teacher‑facing report with a prioritized "top‑3 before submission" list.
 
 ```bash
-/check-articulation path/to/document.md
-/check-articulation paper.tex --section "Chapter 3"
-/check-articulation paper.tex --focus why
-/check-articulation paper.tex --check-only        # Detection only, no suggestions
+/research-review path/to/abstract.tex            # 自動判別（概要/論文/卒論）
+/research-review paper.pdf --type paper           # 種別を明示
+/research-review thesis.docx --deadline tomorrow  # 締切近い＝体裁優先
+/research-review abstract.tex --student           # 教員版＋学生向け1枚も出す
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--section <name>` | Focus on a specific section |
-| `--focus <aspect>` | Prioritize one of: what, why, how, when, limits |
-| `--check-only` | Gap detection only (skip improvement suggestions) |
+### 教員 → 学生の2層 / Teacher → student, two layers
+`/research-review` の出力は**教員向け**（率直・厳しめ）。学生本人に渡す1枚が要るときは：
 
-Supports: `.tex`, `.docx`, `.md`, `.pdf`, `.txt`
+- `/research-review abstract.tex --student` … 教員版に続けて学生向け1枚を生成、または
+- `/student-comment teacher-review.md` … 教員向けレビューを、前向き・抑えめ・優先順の**学生向け1枚**に翻訳。
+
+厳しさは教員版に残し、学生には翻訳して渡す設計です。
 
 ---
 
-### 2. `/review` — Full Auto-Review / 論文の全自動レビュー
+## スキル一覧 / Skills
 
-**When**: Your draft is mostly complete and you want a comprehensive review.
+### Main（よく使う）
+| Skill | 用途 |
+|---|---|
+| `/research-review` | 総合レビュー（概要/論文/卒論を自動判別）。`--type` `--student` `--deadline` `--feedback` |
+| `/student-comment` | 教員向けレビュー → 学生向け1枚に翻訳 |
+| `/format-check` | 体裁チェック（LaTeX/Word/PDF）。概要は `--fixed` で**紙面配分**（参考文献が本文を圧迫していないか等）も診断 |
+| `/review-tracker` | 複数回・複数パートのレビューを統合し、重複排除＋優先度順チェックリスト |
 
-**What it does**: Automatically detects whether the input is a **thesis** or a **research paper**, then runs the appropriate review pipeline with parallel execution.
-
-**いつ**: 原稿がおおむね完成し、包括的なレビューが欲しいとき。
-
-```bash
-/review path/to/thesis.tex
-/review paper.pdf --type paper                # Override auto-detection
-/review thesis.docx --deadline tomorrow       # Format-priority mode
-/review thesis.tex --feedback prev_review.md  # Avoid duplicate findings
-/review paper.tex --quick                     # Abbreviated review
-```
-
-| Option | Description |
-|--------|-------------|
-| `--type thesis\|paper` | Override auto-detection |
-| `--deadline tomorrow\|week\|none` | Adjust priority (thesis path only) |
-| `--feedback <path>` | Existing feedback to avoid duplicates |
-| `--quick` | Abbreviated mode |
-| `--keep-intermediate` | Keep intermediate output files |
-
-**Internal pipeline (thesis path)**:
-```
-Phase 1 (parallel):  /format-check + /thesis-review
-Phase 2 (sequential): /review-tracker → review_tracking.md
-```
-
-**Internal pipeline (paper path)**:
-```
-Phase 1 (parallel):  /survey-literature + /review-analyze
-Phase 2 (sequential): /review-shepherd → REVIEW.md
-```
-
-Supports: `.tex`, `.docx`, `.pdf`, `.md`
+### Lenses（`/research-review` が内部で使う。単体でも可）
+| Skill | 観点 |
+|---|---|
+| `/framing-check` | 研究の骨子の鎖 L1–L6 ＋ **グローバル一貫性**（掲げた構成概念=旗 と 評価指標=物差し のズレ） |
+| `/aim-check` | 研究の**当てどころの深さ**・より深い框への付け替え提案 |
+| `/articulation-check` | 説明の抜けを 5W（What/Why/How/When/Limits）で検出＋改善案 |
+| `/weakness-analyze` | 論理の飛躍・根拠不足・研究設計の弱点を厳格に |
+| `/lit-survey` | 関連研究・引用ギャップの検出 |
+| `/shepherd` | 分析結果を「厳しいけど前向き」な優先度つき改善提案へ変換 |
 
 ---
 
-### 3. `/format-check` — Format & Style Check / 体裁チェック
+## Claude Code で使う / Install as Claude Code skills
 
-**When**: Right before submission. You want to catch formatting issues, typos, and inconsistencies.
-
-**What it does**: Checks formatting, punctuation consistency, figure/table numbering, cross-references, bibliography style, and more. Works with both LaTeX and Word.
-
-**いつ**: 提出直前。体裁の不備や表記ゆれを網羅的に洗い出したいとき。
+前提: [Claude Code](https://claude.ai/code)。
 
 ```bash
-/format-check path/to/thesis.tex
-/format-check thesis.docx
-/format-check path/to/dir/                     # Check all tex/docx in directory
-/format-check thesis.tex --terms terms.txt     # Custom terminology list
-```
-
-| Option | Description |
-|--------|-------------|
-| `--terms <file>` | Custom terminology list for consistency checking |
-
-**Check items include**:
-- Punctuation consistency, title style, figure/table numbering
-- Cross-reference integrity (label/ref for LaTeX, manual refs for Word)
-- Bibliography format, citation style
-- Section numbering, heading levels
-- Layout checks for Word (alignment, indentation, page breaks)
-
-Supports: `.tex`, `.docx`
-
----
-
-### 4. `/review-tracker` — Merge & Track Reviews / レビュー統合・追跡
-
-**When**: After receiving reviews. You have multiple rounds of feedback and need a single, prioritized checklist.
-
-**What it does**: Merges multiple review files, deduplicates findings, assigns priority, and checks resolution status against the current manuscript.
-
-**いつ**: レビュー後の修正対応時。複数回のフィードバックを統合し、優先度順のチェックリストが欲しいとき。
-
-```bash
-/review-tracker review1.md review2.md --source thesis.tex
-/review-tracker feedback_v1.md feedback_v2.md --output tracking.md
-```
-
-| Option | Description |
-|--------|-------------|
-| `--source <path>` | Current manuscript (enables auto status detection) |
-| `--output <path>` | Output file path (default: `review_tracking.md`) |
-
-Also works for code reviews, design reviews, and other document reviews.
-
----
-
-## Advanced: Internal Skills / 内部スキル
-
-These four skills are used internally by `/review`. They can also be invoked standalone.
-
-以下の 4 スキルは `/review` が内部で使用する部品です。単体でも使用できます。
-
-| Skill | Purpose | Used by |
-|-------|---------|---------|
-| `/review-analyze` | Strict critical analysis (reviewer mode) | `/review` (paper path, Phase 1) |
-| `/review-shepherd` | Transform analysis into constructive feedback | `/review` (paper path, Phase 2) |
-| `/survey-literature` | Find related papers, identify citation gaps | `/review` (paper path, Phase 1) |
-| `/thesis-review` | Two-part thesis review (format + content) | `/review` (thesis path, Phase 1) |
-
-### Standalone usage
-
-```bash
-/review-analyze path/to/paper.pdf
-/review-shepherd paper.tex --analysis analysis.md --survey survey.md
-/survey-literature "program slicing for verification"
-/thesis-review thesis.tex --deadline tomorrow --feedback prev.md
-```
-
----
-
-## Installation
-
-### Prerequisites
-
-- [Claude Code](https://claude.ai/code) installed and configured
-
-### Steps
-
-```bash
-git clone https://github.com/nel/paper-review-skills.git
+git clone https://github.com/hisazumi/paper-review-skills.git
 cd paper-review-skills
 ./install.sh
 ```
 
-The installer copies all skills to `~/.claude/skills/` and asks before overwriting existing ones.
+`install.sh` は `skills/` を `~/.claude/skills/` にコピーします（既存があれば確認）。
 
 ---
 
-## Supported Formats
+## Claude Code なしで使う / Use without Claude Code (`prompts/`)
 
-| Format | /check-articulation | /review | /format-check | /review-tracker |
-|--------|:---:|:---:|:---:|:---:|
-| LaTeX (`.tex`) | Yes | Yes | Yes | Yes |
-| Word (`.docx`) | Yes | Yes | Yes | Yes |
-| PDF (`.pdf`) | Yes | Yes | -- | Yes |
-| Markdown (`.md`) | Yes | Yes | -- | Yes |
-| Plain text (`.txt`) | Yes | -- | -- | -- |
+ChatGPT・Gemini・その他のLLMを使う人は、`prompts/` フォルダの**プロンプトを丸ごとコピーして貼るだけ**。セットアップ不要です。
+
+1. `prompts/research-review.md` を丸ごとコピー
+2. 使うLLMの新しいチャットに貼る
+3. 末尾の「ここに文書を貼る」以下を、レビューしたい概要・論文・卒論の本文に置き換えて送信
+
+学生向け1枚が要るときは、その出力を `prompts/student-comment.md` に通します。単一観点だけ見たいときは `prompts/framing-check.md` などの単体プロンプトを。詳しくは [`prompts/README.md`](prompts/README.md)。
 
 ---
 
-## License
+## 対応形式 / Supported formats
 
-MIT License - See [LICENSE](LICENSE) for details.
+| Format | research-review | format-check | review-tracker |
+|--------|:---:|:---:|:---:|
+| LaTeX (`.tex`) | Yes | Yes | Yes |
+| Word (`.docx`) | Yes | Yes | Yes |
+| PDF (`.pdf`)  | Yes | Yes（概要の紙面配分に有利） | Yes |
+| Markdown (`.md`) | Yes | -- | Yes |
 
-## Author
+---
 
-nel
+## 保守について / For maintainers
+
+`skills/` と `prompts/` は**生成物**です。元は作者の `~/.claude/skills/` にあるスキル本文で、`build/build.py` が
+`skills/`（複製）・`prompts/`（frontmatter除去＋references展開した汎用プロンプト、meta は各レンズを inline した統合版）・
+`install.sh` の対象一覧を再生成します。**編集はスキル側で行い、再ビルドしてください**（`skills/`・`prompts/` を手で直さない）。
+
+```bash
+python3 build/build.py --claude-dir ~/.claude/skills
+```
+
+---
+
+## License / Author
+
+MIT License — see [LICENSE](LICENSE). Author: nel.
