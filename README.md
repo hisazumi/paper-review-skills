@@ -104,4 +104,4 @@ python3 build/build.py --claude-dir ~/.claude/skills
 
 ## License / Author
 
-MIT License — see [LICENSE](LICENSE). Author: nel.
+MIT License — see [LICENSE](LICENSE). Author: hisazumi.
